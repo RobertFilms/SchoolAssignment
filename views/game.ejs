@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Shooter</title>
+    <style>
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="public/JS/class/player.js"></script>
+    <script src="public/JS/class/bullet.js"></script>
+    <script src="public/JS/class/zombie.js"></script>
+    <script src="public/JS/events.js"></script>
+    <script src="public/JS/collision.js"></script>
+    <script src="public/JS/main.js"></script>
+
+</body>
+
+<script>
+    const socket = io();
+
+    const canvas = document.getElementById('canvas');
+</script>
+
+</html>
