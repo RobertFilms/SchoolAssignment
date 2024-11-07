@@ -132,7 +132,6 @@ let playerList = [];
 //Canvas
 const X = 800; W = 800; H = 600; Y = 600;
 
-
 class Player {
     constructor(x, y, w, h) {
         this.x = x;
@@ -162,10 +161,9 @@ class Player {
     }
 }
 
-
+io.on('connection', (socket) => {
+    console.log(`User ${socket.id} connected.`);
+    userList.push(socket.id);
+});
 
 //GAME CODE ENDS HERE
-
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
