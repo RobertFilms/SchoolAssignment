@@ -1,56 +1,33 @@
-//TYLER AND ROBERT'S PROJECT FOR CLASS
-
-//Base node stuff frfr
 const express = require('express');
 const app = express();
 const path = require('path');
 const { join } = require('path');
-
 const sql = require('sqlite3');
 const session = require('express-session');
 const crypto = require('crypto');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 3000;
 
-const http = require('http');
-
 const server = http.createServer(app);
-const { Server } = require('socket.io');
 const io = new Server(server);
-
-//Thank goodness for the login boilerplate we made in calss
-//Being insane is trying to do the same thing over and over again and expecting different results - Albert Einstein
-
-//Add a thing to add an image to the user profile (maybe)
-//And I should prob make a ejs page to display profiles
-//Add a chat feature
-//Make the classes and important stuff server side to make it harder to cheat
 
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-//Session stuff
 app.use(session({
     secret: 'LookAtMeImTheSecretNow',
     resave: false,
     saveUninitialized: false
 }));
 
-//Functions
 function isAuthed(req, res, next) {
     if (req.session.user) next();
     else res.redirect('/login');
 }
 
-io.on('connection', (socket) => {
-    console.log('New user connected.');
-    socket.on('disconnect', () => {
-        console.log('A user has disconnected.');
-    });
-});
-
-//App gets
 app.get('/', isAuthed, (req, res) => {
     res.render(join('index'));
 });
@@ -63,7 +40,7 @@ app.get('/game', isAuthed, (req, res) => {
     res.render('game');
 });
 
-app.get('/profile', isAuthed, (req, res) => {  
+app.get('/profile', isAuthed, (req, res) => {
     db.get('SELECT * FROM users WHERE username = ?;', req.session.user, (err, row) => {
         if (err) res.send('An error occured:\n' + err);
         else {
@@ -72,16 +49,12 @@ app.get('/profile', isAuthed, (req, res) => {
     });
 });
 
-//App posts
 app.post('/login', (req, res) => {
     if (req.body.username && req.body.password) {
         db.get('SELECT * FROM users WHERE username = ?; ', req.body.username, (err, row) => {
             if (err) res.redirect('/login', { message: 'An error occured' });
             else if (!row) {
-                //Create a new salt for this user
                 const SALT = crypto.randomBytes(16).toString('hex');
-
-                //use salt to 'hash' the password
                 crypto.pbkdf2(req.body.password, SALT, 1000, 64, 'sha512', (err, derivedKey) => {
                     if (err) res.redirect('/login');
                     else {
@@ -95,16 +68,12 @@ app.post('/login', (req, res) => {
                     }
                 });
             } else {
-                //Compare your password with stored password
-
                 crypto.pbkdf2(req.body.password, row.salt, 1000, 64, 'sha512', (err, derivedKey) => {
                     if (err) res.redirect('/login');
-                     else {
+                    else {
                         const hashPassword = derivedKey.toString('hex');
-
                         if (hashPassword === row.password) {
                             req.session.user = req.body.username;
-
                             res.redirect('/');
                         } else res.redirect('/login');
                     }
@@ -122,52 +91,42 @@ const db = new sql.Database('data/userData.db', (err) => {
     }
 });
 
-//GAME CODE STARTS HERE
-
-//Vars
-let userList = [];
-let playerList = [];
-
-//Canvas
-const X = 800; W = 800; H = 600; Y = 600;
+let playerList = {};
 
 class Player {
-    constructor(x, y, w, h) {
+    constructor(id, x, y, w, h) {
+        this.id = id;
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
-    }
-
-    draw() {
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(this.x, this.y, this.w, this.h);
-    }
-
-    update() {
-        if (this.x < 0) {
-            this.x = 0;
-        }
-        if (this.x + this.w > canvas.width) {
-            this.x = canvas.width - this.w;
-        }
-        if (this.y < 0) {
-            this.y = 0;
-        }
-        if (this.y + this.h > canvas.height) {
-            this.y = canvas.height - this.h;
-        }
+        this.color = `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
     }
 }
 
 io.on('connection', (socket) => {
     console.log(`User ${socket.id} connected.`);
-    userList.push(socket.id);
-    console.log(userList);
+    playerList[socket.id] = new Player(socket.id, 0, 0, 50, 50);
+
+    socket.emit('init', playerList);
+
+    socket.on('move', (key) => handleKeys(socket.id, key));
+    socket.on('disconnect', () => {
+        console.log(`User ${socket.id} disconnected.`);
+        delete playerList[socket.id];
+        io.emit('update', playerList);
+    });
+
+    function handleKeys(id, key) {
+        const speed = 7;
+        if (key === 'w') playerList[id].y -= speed;
+        if (key === 'a') playerList[id].x -= speed;
+        if (key === 's') playerList[id].y += speed;
+        if (key === 'd') playerList[id].x += speed;
+        io.emit('update', playerList);
+    }
 });
 
-//GAME CODE ENDS HERE
-
 server.listen(PORT, () => {
-    console.log(`Server started on http://localhost:${PORT}`);
+    console.log(`Server started on port:${PORT}`);
 });
