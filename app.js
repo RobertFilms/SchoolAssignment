@@ -1,22 +1,21 @@
 //TYLER AND ROBERT'S PROJECT FOR CLASS
 
 //Base node stuff frfr
-const sql = require('sqlite3');
 const express = require('express');
+const app = express();
 const path = require('path');
+const { join } = require('path');
+
+const sql = require('sqlite3');
 const session = require('express-session');
 const crypto = require('crypto');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-const app = express();
+const http = require('http');
 
-const { createServer } = require('node:http');
-const { join } = require('node:path');
-
+const server = http.createServer(app);
 const { Server } = require('socket.io');
-const { disconnect } = require('process');
-const server = createServer(app);
 const io = new Server(server);
 
 //Thank goodness for the login boilerplate we made in calss
@@ -164,6 +163,11 @@ class Player {
 io.on('connection', (socket) => {
     console.log(`User ${socket.id} connected.`);
     userList.push(socket.id);
+    console.log(userList);
 });
 
 //GAME CODE ENDS HERE
+
+server.listen(PORT, () => {
+    console.log(`Server started on http://localhost:${PORT}`);
+});
