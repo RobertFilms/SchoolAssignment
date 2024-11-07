@@ -94,6 +94,9 @@ const db = new sql.Database('data/userData.db', (err) => {
     }
 });
 
+//GAME CODE STARTS HERE
+
+//VARS
 let playerList = {};
 
 class Player {
@@ -103,7 +106,8 @@ class Player {
         this.y = y;
         this.w = w;
         this.h = h;
-        this.color = `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
+        this.color = `rgb(${Math.floor(Math.random() * 256)}, 0, ${Math.floor(Math.random() * 256)})`;
+        this.keys = {};
     }
 }
 
@@ -115,7 +119,13 @@ io.on('connection', (socket) => {
     socket.emit('init', playerList);
 
     //Handle key presses
-    socket.on('move', (key) => handleKeys(socket.id, key));
+    socket.on('keyDown', (key) => {
+        playerList[socket.id].keys[key] = true;
+    });
+
+    socket.on('keyUp', (key) => {
+        delete playerList[socket.id].keys[key];
+    });
 
     //When a player disconnects
     socket.on('disconnect', () => {
@@ -124,28 +134,32 @@ io.on('connection', (socket) => {
         //Update all players
         io.emit('update', playerList);
     });
-
-    function handleKeys(id, key) {
-        const speed = 7;
-        let wKey = false;
-        let aKey = false;
-        let sKey = false;
-        let dKey = false;
-
-        if (key === 'w') wKey = true;
-        if (key === 'a') aKey = true;
-        if (key === 's') sKey = true;
-        if (key === 'd') dKey = true;
-        
-        if (wKey) playerList[id].y -= speed;
-        if (aKey) playerList[id].x -= speed;
-        if (sKey) playerList[id].y += speed;
-        if (dKey) playerList[id].x += speed;
-
-        //Send updated player list to everyne
-        io.emit('update', playerList);
-    }
 });
+
+function updatePlayerPositions() {
+    const speed = 7;
+    for (let id in playerList) {
+        //Move player
+        let player = playerList[id];
+        if (player.keys['w']) player.y -= speed;
+        if (player.keys['a']) player.x -= speed;
+        if (player.keys['s']) player.y += speed;
+        if (player.keys['d']) player.x += speed;
+
+        //Keep player in canvas
+        if (player.x < 0) player.x = 0;
+        if (player.y < 0) player.y = 0;
+        if (player.x + player.w > 1800) player.x = 1800 - player.w;
+        if (player.y + player.h > 800) player.y = 800 - player.h;
+    }
+    //Update all players
+    io.emit('update', playerList);
+}
+
+ //Update postions at 60fps
+setInterval(updatePlayerPositions, 1000 / 60);
+
+//GAME CODE ENDS HERE
 
 server.listen(PORT, () => {
     console.log(`Server started on port:${PORT}`);
