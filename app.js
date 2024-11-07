@@ -1,3 +1,6 @@
+//TYLERS'S AND ROBERT'S GAME
+
+//SO MUCH CONSTS
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -108,21 +111,38 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.id} connected.`);
     playerList[socket.id] = new Player(socket.id, 0, 0, 50, 50);
 
+    //Send player list to new player
     socket.emit('init', playerList);
 
+    //Handle key presses
     socket.on('move', (key) => handleKeys(socket.id, key));
+
+    //When a player disconnects
     socket.on('disconnect', () => {
         console.log(`User ${socket.id} disconnected.`);
         delete playerList[socket.id];
+        //Update all players
         io.emit('update', playerList);
     });
 
     function handleKeys(id, key) {
         const speed = 7;
-        if (key === 'w') playerList[id].y -= speed;
-        if (key === 'a') playerList[id].x -= speed;
-        if (key === 's') playerList[id].y += speed;
-        if (key === 'd') playerList[id].x += speed;
+        let wKey = false;
+        let aKey = false;
+        let sKey = false;
+        let dKey = false;
+
+        if (key === 'w') wKey = true;
+        if (key === 'a') aKey = true;
+        if (key === 's') sKey = true;
+        if (key === 'd') dKey = true;
+        
+        if (wKey) playerList[id].y -= speed;
+        if (aKey) playerList[id].x -= speed;
+        if (sKey) playerList[id].y += speed;
+        if (dKey) playerList[id].x += speed;
+
+        //Send updated player list to everyne
         io.emit('update', playerList);
     }
 });
