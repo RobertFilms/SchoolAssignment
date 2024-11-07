@@ -10,7 +10,7 @@ socket.on('init', (players) => {
     //Init playerList
     playerList = players;
     playerId = socket.id;
-    update();
+    update(); 
 });
 
 socket.on('update', (players) => {

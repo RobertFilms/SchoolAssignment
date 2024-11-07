@@ -111,6 +111,17 @@ class Player {
     }
 }
 
+class zombie {
+    constructor(id, x, y, w, h) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.color = 'darkgreen';
+    }
+}
+
 io.on('connection', (socket) => {
     console.log(`User ${socket.id} connected.`);
     playerList[socket.id] = new Player(socket.id, 0, 0, 50, 50);
@@ -126,6 +137,20 @@ io.on('connection', (socket) => {
     socket.on('keyUp', (key) => {
         delete playerList[socket.id].keys[key];
     });
+    
+    // Spawn zombies at random spots
+    const zombieCount = 20;
+    let zombieList = {};
+
+    for (let i = 0; i < zombieCount; i++) {
+        const id = `zombie_${i}`;
+        const x = Math.floor(Math.random() * 1800);
+        const y = Math.floor(Math.random() * 800);
+        zombieList[id] = new zombie(id, x, y, 50, 50);
+    }
+
+    // Send zombie list to new player
+    socket.emit('zombieInit', zombieList);
 
     //When a player disconnects
     socket.on('disconnect', () => {
