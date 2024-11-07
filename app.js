@@ -115,10 +115,6 @@ app.post('/login', (req, res) => {
     }
 });
 
-app.post('/game', isAuthed, (req, res) => {
-    
-});
-
 const db = new sql.Database('data/userData.db', (err) => {
     if (err) {
         console.error(err);
@@ -126,6 +122,49 @@ const db = new sql.Database('data/userData.db', (err) => {
         console.log('Opened database');
     }
 });
+
+//GAME CODE STARTS HERE
+
+//Vars
+let userList = [];
+let playerList = [];
+
+//Canvas
+const X = 800; W = 800; H = 600; Y = 600;
+
+
+class Player {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+
+    draw() {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+    }
+
+    update() {
+        if (this.x < 0) {
+            this.x = 0;
+        }
+        if (this.x + this.w > canvas.width) {
+            this.x = canvas.width - this.w;
+        }
+        if (this.y < 0) {
+            this.y = 0;
+        }
+        if (this.y + this.h > canvas.height) {
+            this.y = canvas.height - this.h;
+        }
+    }
+}
+
+
+
+//GAME CODE ENDS HERE
 
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
