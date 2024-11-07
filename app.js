@@ -98,6 +98,7 @@ const db = new sql.Database('data/userData.db', (err) => {
 
 //VARS
 let playerList = {};
+let bulletList = {};
 
 class Player {
     constructor(id, x, y, w, h) {
@@ -108,6 +109,15 @@ class Player {
         this.h = h;
         this.color = `rgb(${Math.floor(Math.random() * 256)}, 0, ${Math.floor(Math.random() * 256)})`;
         this.keys = {};
+    }
+}
+
+class Bullet {
+    constructor(x, y, dx, dy) {
+        this.x = x;
+        this.y = y;
+        this.color = 'black';
+        this.key = {};
     }
 }
 
@@ -127,6 +137,10 @@ io.on('connection', (socket) => {
         delete playerList[socket.id].keys[key];
     });
 
+    socket.on('shoot', (key) => {
+        
+    });
+
     //When a player disconnects
     socket.on('disconnect', () => {
         console.log(`User ${socket.id} disconnected.`);
@@ -136,11 +150,16 @@ io.on('connection', (socket) => {
     });
 });
 
+function iNeedmoreBullets() {
+
+}
+
 function updatePlayerPositions() {
     const speed = 7;
     for (let id in playerList) {
-        //Move player
         let player = playerList[id];
+
+        //Move player
         if (player.keys['w']) player.y -= speed;
         if (player.keys['a']) player.x -= speed;
         if (player.keys['s']) player.y += speed;
@@ -158,6 +177,7 @@ function updatePlayerPositions() {
 
  //Update postions at 60fps
 setInterval(updatePlayerPositions, 1000 / 60);
+setInterval(iNeedmoreBullets, 1000 / 60);
 
 //GAME CODE ENDS HERE
 

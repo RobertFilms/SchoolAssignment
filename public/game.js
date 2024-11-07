@@ -19,6 +19,14 @@ socket.on('update', (players) => {
     update();
 });
 
+socket.on('bullet', (bullet) => {
+    //Create a bullet
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'black';
+    ctx.fillRect(bullet.x, bullet.y, bullet.w, bullet.h);
+});
+
 //Event
 document.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -27,13 +35,17 @@ document.addEventListener('keydown', (event) => {
         keys[key] = true;
         socket.emit('keyDown', key);
     }
+
+    if (key === ' ') {
+        //Send server the key inputs
+        socket.emit('shoot', key);
+    }
 });
 
 document.addEventListener('keyup', (event) => {
     const key = event.key.toLowerCase();
     if (['w', 'a', 's', 'd'].includes(key)) {
         //Send server the key inputs
-        keys[key] = false;
         socket.emit('keyUp', key);
     }
 });
