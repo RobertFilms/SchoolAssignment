@@ -3,6 +3,7 @@ const socket = io();
 //Vars
 let playerList = {};
 let playerId = null;
+let bulletList = {};
 let keys = {};
 
 //Sockets

@@ -127,6 +127,10 @@ io.on('connection', (socket) => {
 
     //Send player list to new player
     socket.emit('init', playerList);
+    socket.emit('update', playerList);
+
+    socket.emit('bullet', bulletList);
+    socket.emit('update', bulletList);
 
     //Handle key presses
     socket.on('keyDown', (key) => {
@@ -136,6 +140,16 @@ io.on('connection', (socket) => {
     socket.on('keyUp', (key) => {
         delete playerList[socket.id].keys[key];
     });
+
+    const zombieCount = 20;
+    let zombieList = [];
+
+    for (let i = 0; i < zombieCount; i++) {
+        const id = Math.random();
+        const x = math.floor(Math.random() * 1800);
+        const y = math.floor(Math.random() * 800);
+        zombieList[id] = new Zombie(id, x, y, 50, 50);
+    }
 
     socket.on('shoot', (key) => {
         
@@ -151,7 +165,7 @@ io.on('connection', (socket) => {
 });
 
 function iNeedmoreBullets() {
-
+    
 }
 
 function updatePlayerPositions() {
