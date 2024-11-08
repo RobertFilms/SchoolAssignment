@@ -20,6 +20,12 @@ socket.on('update', (players) => {
     update();
 });
 
+socket.on('zombieinit', (zombies) => {
+    //Update zombieList
+    zombieList = zombies;
+    update();
+});
+
 socket.on('bullet', (bullet) => {
     //Create a bullet
     const canvas = document.getElementById('gameCanvas');
@@ -62,6 +68,13 @@ function update() {
     //Canvas color
     ctx.fillStyle = '#19b543';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    //Draw zombies
+    for (let id in zombieList) {
+        const zombie = zombieList[id];
+        ctx.fillStyle = 'darkgreen';
+        ctx.fillRect(zombie.x, zombie.y, zombie.w, zombie.h);
+    }
 
     //Draw players
     for (let id in playerList) {

@@ -97,8 +97,8 @@ const db = new sql.Database('data/userData.db', (err) => {
 //GAME CODE STARTS HERE
 
 //VARS
-let playerList = {};
-let bulletList = {};
+let playerList = [];
+let bulletList = [];
 
 class Player {
     constructor(id, x, y, w, h) {
@@ -113,11 +113,22 @@ class Player {
 }
 
 class Bullet {
-    constructor(x, y, dx, dy) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
         this.color = 'black';
         this.key = {};
+    }
+}
+
+class Zombie {
+    constructor(id, x, y, w, h) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.color = 'darkgreen';
     }
 }
 
@@ -129,9 +140,6 @@ io.on('connection', (socket) => {
     socket.emit('init', playerList);
     socket.emit('update', playerList);
 
-    socket.emit('bullet', bulletList);
-    socket.emit('update', bulletList);
-
     //Handle key presses
     socket.on('keyDown', (key) => {
         playerList[socket.id].keys[key] = true;
@@ -141,18 +149,23 @@ io.on('connection', (socket) => {
         delete playerList[socket.id].keys[key];
     });
 
-    const zombieCount = 20;
-    let zombieList = [];
-
-    for (let i = 0; i < zombieCount; i++) {
-        const id = Math.random();
-        const x = math.floor(Math.random() * 1800);
-        const y = math.floor(Math.random() * 800);
+    //Initialize zombies
+    let zombieList = {};
+    for (let i = 0; i < 10; i++) {
+        let id = `zombie${i}`;
+        let x = Math.floor(Math.random() * 1800);
+        let y = Math.floor(Math.random() * 800);
         zombieList[id] = new Zombie(id, x, y, 50, 50);
     }
 
+    // Send zombies to all players
+    io.emit('zombieinit', zombieList);
+
+    //Send zombies to new player
+    socket.emit('zombieinit', zombieList);
+
     socket.on('shoot', (key) => {
-        
+
     });
 
     //When a player disconnects
@@ -164,8 +177,29 @@ io.on('connection', (socket) => {
     });
 });
 
+function moveZombies() {
+    if (playerList.length) {
+        let closePlayer = null;
+        let closeDistance = null;
+        for (const player of playerList) {
+            let distance = Math.sqrt((player.x - zombie.x) ** 2 + (player.y - zombie.y) ** 2);
+            if (closeDistance === null || distance < closeDistance) {
+                closeDistance = distance;
+                closePlayer = player;
+            }
+        }
+
+        let distance = Math.sqrt((closePlayer.x - zombie.x) ** 2 + (closePlayer.y - zombie.y) ** 2);
+        let normalX = (closePlayer.x - zombie.x) / distance;
+        let normalY = (closePlayer.y - zombie.y) / distance;
+        zombie.x += normalX;
+        zombie.y += normalY;
+        io.emit('update', zombieList);
+    }
+}
+
 function iNeedmoreBullets() {
-    
+
 }
 
 function updatePlayerPositions() {
@@ -189,9 +223,14 @@ function updatePlayerPositions() {
     io.emit('update', playerList);
 }
 
- //Update postions at 60fps
-setInterval(updatePlayerPositions, 1000 / 60);
-setInterval(iNeedmoreBullets, 1000 / 60);
+//Update postions at 60fps
+setInterval(update, 1000 / 60);
+
+function update() {
+    updatePlayerPositions();
+    iNeedmoreBullets();
+    moveZombies();
+}
 
 //GAME CODE ENDS HERE
 
