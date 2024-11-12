@@ -26,7 +26,6 @@ socket.on('init', (players, zombies, bullets) => {
 
     bulletList = bullets;
     bulletId = `bullet_${Date.now()}`;
-    update();
 });
 
 socket.on('update', (data) => {
@@ -36,7 +35,10 @@ socket.on('update', (data) => {
     zombieList = data.zombies;
 
     bulletList = data.bullets;
-    update();
+    
+    if (document.getElementById('gameCanvas')) {
+        update();
+    }
 });
 
 //Event
@@ -111,5 +113,5 @@ window.onload = () => {
     const canvas = document.createElement('canvas');
     canvas.id = 'gameCanvas';
     document.body.appendChild(canvas);
-    update();
+    socket.emit('requestInit');
 }
