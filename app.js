@@ -1,4 +1,4 @@
-//TYLERS'S AND ROBERT'S GAME
+//ROBERT'S GAME
 
 //SO MUCH CONSTS
 const express = require('express');
