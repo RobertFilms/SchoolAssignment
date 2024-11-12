@@ -157,6 +157,9 @@ class Bullet {
 }
 
 function spawnZombie() {
+    const maxZombies = 10;
+
+    if (Object.keys(zombieList).length > maxZombies) return;
     const id = `zombie_${Date.now()}`;
     let x = Math.random() * 1800;
     let y = Math.random() * 800;
@@ -248,10 +251,8 @@ function updatePlayerPositions() {
 
 function updateZombie() {
     const speed = 5;
-    const maxZombies = 10;
 
     //Sigma return
-    if (Object.keys(zombieList).length > maxZombies) return;
 
     for (let id in zombieList) {
         let zombie = zombieList[id];
@@ -299,7 +300,7 @@ function updateZombie() {
 }
 
 function updateBullet() {
-    const speed = 11;
+    const speed = 15;
     for (let id in bulletList) {
         //If there are no players continue
         if (Object.keys(playerList).length == 0) continue;
