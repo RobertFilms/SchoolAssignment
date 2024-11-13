@@ -197,7 +197,7 @@ function spawnZombie() {
 }
 
 function spawnBullet(playerId) {
-    const id = `bullet_${Date.now()}`;
+    const id = playerId;
     let player = playerList.find(p => p.id === playerId); //p stands for player
     let x = player.x;
     let y = player.y;
@@ -329,7 +329,10 @@ function updateZombie() {
 
 function updateBullet() {
     const speed = 15;
-    for (let bullet of bulletList) {
+    for (let b in bulletList) {
+
+        let bullet = bulletList[b];
+
         //If there are no players continue
         if (playerList.length == 0) continue;
 
@@ -349,16 +352,21 @@ function updateBullet() {
         for (let zombie of zombieList) {
             if (checkCollision(bullet, zombie)) {
                 //Remove bullet and zombie
-                bulletList = bulletList.filter(b => b.id !== bullet.id); //b stands for bullet
-                zombieList = zombieList.filter(z => z.id !== zombie.id); //z stands for zombie
+                bulletList = bulletList.splice(b, 1);
+                zombieList = zombieList.filter(z => z.id !== zombie.id);
                 
+                //Increase player score
+                let p = playerList.find(p => p.id === bullet.id);
+                p.score += 1;
+
                 break;
             }
         }
 
         //Remove bullet if it goes out of canvas
         if (bullet.x < 0 || bullet.x > 1800 || bullet.y < 0 || bullet.y > 850) {
-            bulletList = bulletList.filter(b => b.id !== bullet.id); //bulletList = bulletList's id
+            //Remove bullet
+            bulletList = bulletList.splice(b, 1)
         }
     }
 }
