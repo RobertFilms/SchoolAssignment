@@ -11,11 +11,23 @@
             top: 0;
             left: 0;
         }
+        .info-box {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 10;
+        }
     </style>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
+    <div class="info-box">
+        <p id="score"></p>
+    </div>
+    <canvas id="gameCanvas"></canvas>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="public/game.js"></script>
