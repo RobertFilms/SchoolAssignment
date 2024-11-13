@@ -130,7 +130,7 @@ class Player {
         this.color = `rgb(${Math.floor(Math.random() * 256)}, 0, ${Math.floor(Math.random() * 256)})`;
         this.keys = {};
         this.lastShot = 0;
-        this.hp = 100;
+        this.hp = 10; //normally 100
         this.dead = false;
         this.score = 0;
     }
@@ -254,7 +254,7 @@ function updatePlayerPositions() {
         let shootCooldown = 250; //250ms
 
         //Move player
-        let player = playerList[id];
+        //let player = playerList[id];
         if (player.keys['w']) player.y -= speed;
         if (player.keys['a']) player.x -= speed;
         if (player.keys['s']) player.y += speed;
