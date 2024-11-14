@@ -130,8 +130,6 @@ class Player {
         this.color = `rgb(${Math.floor(Math.random() * 256)}, 0, ${Math.floor(Math.random() * 256)})`;
         this.keys = {};
         this.lastShot = 0;
-        this.hp = 100;
-        this.dead = false;
         this.score = 0;
     }
 }
@@ -268,13 +266,6 @@ function updatePlayerPositions() {
             }
         }
 
-        //Check if player is dead
-        if (player.hp <= 0) {
-            //No worky
-            io.to(player.id).emit('dead');
-            player.dead = true;
-        }
-
         if (player.x < 0) player.x = 0;
         if (player.y < 0) player.y = 0;
         if (player.x > 1750) player.x = 1750;
@@ -312,31 +303,20 @@ function updateZombie() {
             //Move zombie
             zombie.x += normX * speed;
             zombie.y += normY * speed;
-
-            //Hit Cooldown
-            const hitCooldown = 1000;
-            const now = Date.now();
-            if (!zombie.lastHit || now - zombie.lastHit >= hitCooldown) {
-                //Check for colision with player 
-                if (checkCollision(zombie, closestPlayer)) {
-                    closestPlayer.hp -= 10;
-                    zombie.lastHit = now;
-                }
-            }
         }
     }
 }
 
 function updateBullet() {
     const speed = 15;
-    for (let b in bulletList) {
+    for (let b = bulletList.length - 1; b >= 0; b--) {
 
         let bullet = bulletList[b];
 
-        //If there are no players continue
+        // If there are no players continue
         if (playerList.length == 0) continue;
 
-        //Calculate direction towards mouse position
+        // Calculate direction towards mouse position
         let dx = bullet.dx;
         let dy = bullet.dy;
         let distance = Math.sqrt(dx ** 2 + dy ** 2);
@@ -344,29 +324,29 @@ function updateBullet() {
         let normX = dx / distance;
         let normY = dy / distance;
 
-        //Move bullet towards mouse position
+        // Move bullet towards mouse position
         bullet.x += normX * speed;
         bullet.y += normY * speed;
 
-        //Check for colision with zombies
-        for (let zombie of zombieList) {
+        // Check for collision with zombies
+        for (let z = zombieList.length - 1; z >= 0; z--) {
+            let zombie = zombieList[z];
             if (checkCollision(bullet, zombie)) {
-                //Remove bullet and zombie
-                bulletList = bulletList.splice(b, 1);
-                zombieList = zombieList.filter(z => z.id !== zombie.id);
-                
-                //Increase player score
-                let p = playerList.find(p => p.id === bullet.id);
-                p.score += 1;
+                // Remove bullet and zombie
+                bulletList.splice(b, 1);
+                zombieList.splice(z, 1);
+
+                // Increase player score
+                let player = playerList.find(p => p.id === bullet.id);
+                if (player) player.score += 1;
 
                 break;
             }
         }
 
-        //Remove bullet if it goes out of canvas
+        // Remove bullet if it goes out of canvas
         if (bullet.x < 0 || bullet.x > 1800 || bullet.y < 0 || bullet.y > 850) {
-            //Remove bullet
-            bulletList = bulletList.splice(b, 1)
+            bulletList.splice(b, 1);
         }
     }
 }
