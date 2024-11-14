@@ -17,9 +17,9 @@ let zombieId = null;
 let bulletList = [];
 let bulletId = null;
 
-let playerScore = 0;
+let playerScore = 1;
 
-let scoreDysplay = document.getElementById('score');
+let scoreDisplay = document.getElementById('score');
 
 let keys = {};
 
@@ -45,6 +45,12 @@ socket.on('init', (data) => {
 socket.on('update', (data) => {
     //Update playerList
     playerList = data.players; //Get all players
+
+    // Update the player's score
+    const player = playerList.find(player => player.id === playerId);
+    if (player) {
+        playerScore = player.score;
+    }
 
     zombieList = data.zombies; //Get all zombies
 
@@ -102,7 +108,7 @@ function update() {
     //Draw score
     ctx.fillStyle = 'black';
     ctx.font = '30px Arial';
-    scoreDysplay.innerHTML = `Score: ${playerScore}`;
+    scoreDisplay.innerHTML = `Score: ${playerScore}`;
 
     //Draw players
     for (let player of playerList) {
