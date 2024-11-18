@@ -131,7 +131,7 @@ class Player {
         this.keys = {};
         this.lastShot = 0;
         this.score = 0;
-        this.hp = 100;
+        this.hp = 100; //normally 100
     }
 }
 
@@ -236,7 +236,6 @@ io.on('connection', (socket) => {
         mouseX = data.x;
         mouseY = data.y;
     });
-
     //On disconnect
     socket.on('disconnect', () => {
         console.log(`User ${socket.id} disconnected.`);
@@ -257,6 +256,7 @@ function updatePlayerPositions() {
         let shootCooldown = 250; //250ms
 
         //Move player
+        //let player = playerList[id];
         if (player.keys['w']) player.y -= speed;
         if (player.keys['a']) player.x -= speed;
         if (player.keys['s']) player.y += speed;
@@ -279,6 +279,8 @@ function updatePlayerPositions() {
 }
 
 function updateZombie() {
+
+
     const speed = 5;
 
     for (let zombie of zombieList) {
@@ -310,81 +312,89 @@ function updateZombie() {
             zombie.y += normY * speed;
 
             //Check for collison with player
+            if (checkCollision(zombie, closestPlayer)) {
+                closestPlayer.hp -= 100000; //normally 10
+                if (closestPlayer.hp <= 0) {
+                    closestPlayer.dead = true;
+                    io.emit('dead');
+                }
+            }
         }
     }
 }
 
-    function updateBullet() {
-        const speed = 15;
-        for (let b = bulletList.length - 1; b >= 0; b--) {
 
-            let bullet = bulletList[b];
+function updateBullet() {
+    const speed = 15;
+    for (let b = bulletList.length - 1; b >= 0; b--) {
 
-            // If there are no players continue
-            if (playerList.length == 0) continue;
+        let bullet = bulletList[b];
 
-            // Calculate direction towards mouse position
-            let dx = bullet.dx;
-            let dy = bullet.dy;
-            let distance = Math.sqrt(dx ** 2 + dy ** 2);
+        // If there are no players continue
+        if (playerList.length == 0) continue;
 
-            let normX = dx / distance;
-            let normY = dy / distance;
+        // Calculate direction towards mouse position
+        let dx = bullet.dx;
+        let dy = bullet.dy;
+        let distance = Math.sqrt(dx ** 2 + dy ** 2);
 
-            // Move bullet towards mouse position
-            bullet.x += normX * speed;
-            bullet.y += normY * speed;
+        let normX = dx / distance;
+        let normY = dy / distance;
 
-            // Check for collision with zombies
-            for (let z = zombieList.length - 1; z >= 0; z--) {
-                let zombie = zombieList[z];
-                if (checkCollision(bullet, zombie)) {
-                    // Remove bullet and zombie
-                    bulletList.splice(b, 1);
-                    zombieList.splice(z, 1);
+        // Move bullet towards mouse position
+        bullet.x += normX * speed;
+        bullet.y += normY * speed;
 
-                    // Increase player score
-                    let player = playerList.find(p => p.id === bullet.id);
-                    if (player) player.score += 1;
-
-                    break;
-                }
-            }
-
-            // Remove bullet if it goes out of canvas
-            if (bullet.x < 0 || bullet.x > 1800 || bullet.y < 0 || bullet.y > 850) {
+        // Check for collision with zombies
+        for (let z = zombieList.length - 1; z >= 0; z--) {
+            let zombie = zombieList[z];
+            if (checkCollision(bullet, zombie)) {
+                // Remove bullet and zombie
                 bulletList.splice(b, 1);
+                zombieList.splice(z, 1);
+
+                // Increase player score
+                let player = playerList.find(p => p.id === bullet.id);
+                if (player) player.score += 1;
+
+                break;
             }
         }
+
+        // Remove bullet if it goes out of canvas
+        if (bullet.x < 0 || bullet.x > 1800 || bullet.y < 0 || bullet.y > 850) {
+            bulletList.splice(b, 1);
+        }
     }
+}
 
-    //One and only collision function
-    function checkCollision(obj1, obj2) {
-        return obj1.x < obj2.x + obj2.w &&
-            obj1.x + obj1.w > obj2.x &&
-            obj1.y < obj2.y + obj2.h &&
-            obj1.y + obj1.h > obj2.y;
-    }
+//One and only collision function
+function checkCollision(obj1, obj2) {
+    return obj1.x < obj2.x + obj2.w &&
+        obj1.x + obj1.w > obj2.x &&
+        obj1.y < obj2.y + obj2.h &&
+        obj1.y + obj1.h > obj2.y;
+}
 
-    //Spawn zombie
-    setInterval(spawnZombie, Math.random() * 3000 + 1000);
+//Spawn zombie
+setInterval(spawnZombie, Math.random() * 3000 + 1000);
 
-    //Send updates to clients
-    setInterval(() => {
-        io.emit('update', { players: playerList, zombies: zombieList, bullets: bulletList });
-    }, 1000 / 60);
+//Send updates to clients
+setInterval(() => {
+    io.emit('update', { players: playerList, zombies: zombieList, bullets: bulletList });
+}, 1000 / 60);
 
-    //Update game
-    setInterval(updateGame, 1000 / 60);
+//Update game
+setInterval(updateGame, 1000 / 60);
 
-    function updateGame() {
-        updatePlayerPositions();
-        updateZombie();
-        updateBullet();
-    }
+function updateGame() {
+    updatePlayerPositions();
+    updateZombie();
+    updateBullet();
+}
 
-    //GAME CODE ENDS HERE
+//GAME CODE ENDS HERE
 
-    server.listen(PORT, () => {
-        console.log(`Server started on port:${PORT}`);
-    });
+server.listen(PORT, () => {
+    console.log(`Server started on port:${PORT}`);
+});
