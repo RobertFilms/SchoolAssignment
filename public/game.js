@@ -26,6 +26,8 @@ let keys = {};
 let mouseX = 0;
 let mouseY = 0;
 
+let deadPage = '/dead';
+
 const lerp = (a, b, t) => a + (b - a) * t;
 
 //Sockets
@@ -60,6 +62,10 @@ socket.on('update', (data) => {
         update();
     }
 });
+
+socket.on('dead', (deadPage) => {
+    window.location.href = deadPage;
+})
 
 //Event
 document.addEventListener('keydown', (event) => {

@@ -131,6 +131,7 @@ class Player {
         this.keys = {};
         this.lastShot = 0;
         this.score = 0;
+        this.hp = 100;
     }
 }
 
@@ -143,6 +144,7 @@ class Zombie {
         this.id = id;
         this.color = 'darkgreen';
         this.lastHit = 0;
+        this.hp = 3;
     }
 }
 
@@ -164,7 +166,7 @@ function spawnZombie() {
 
     if (zombieList.length >= maxZombies) return;
     const id = `zombie_${Date.now()}`;
-    
+
     //Spawn zombie on the edge
     let x, y;
     const edge = Math.floor(Math.random() * 4);
@@ -180,12 +182,12 @@ function spawnZombie() {
             y = 800;
             break;
         //Left
-        case 2: 
+        case 2:
             x = 0;
             y = Math.random() * 800;
             break;
         //Right
-        case 3: 
+        case 3:
             x = 1800;
             y = Math.random() * 800;
             break;
@@ -218,7 +220,7 @@ io.on('connection', (socket) => {
             player.keys[key] = true;
         }
     });
-    
+
     socket.on('keyUp', (key) => {
         let player = playerList.find(p => p.id === socket.id); //p stands for player
         if (player) {
@@ -229,6 +231,8 @@ io.on('connection', (socket) => {
 
     //Handle mouse movement
     socket.on('mouse', (data) => {
+        let player = playerList.find(p => p.id === socket.id); //p stands for player
+        if (!player) return;
         mouseX = data.x;
         mouseY = data.y;
     });
@@ -241,8 +245,9 @@ io.on('connection', (socket) => {
     });
 
     //DAWG JUST WORK ALREADY
+    let deadPage = '/dead.ejs';
     socket.on('dead', () => {
-        socket.emit('redirect', '/dead');
+        socket.emit('redirect', deadPage);
     });
 });
 
@@ -304,81 +309,83 @@ function updateZombie() {
             //Move zombie
             zombie.x += normX * speed;
             zombie.y += normY * speed;
+
+            //Check for collison with player
         }
     }
 }
 
-function updateBullet() {
-    const speed = 15;
-    for (let b = bulletList.length - 1; b >= 0; b--) {
+    function updateBullet() {
+        const speed = 15;
+        for (let b = bulletList.length - 1; b >= 0; b--) {
 
-        let bullet = bulletList[b];
+            let bullet = bulletList[b];
 
-        // If there are no players continue
-        if (playerList.length == 0) continue;
+            // If there are no players continue
+            if (playerList.length == 0) continue;
 
-        // Calculate direction towards mouse position
-        let dx = bullet.dx;
-        let dy = bullet.dy;
-        let distance = Math.sqrt(dx ** 2 + dy ** 2);
+            // Calculate direction towards mouse position
+            let dx = bullet.dx;
+            let dy = bullet.dy;
+            let distance = Math.sqrt(dx ** 2 + dy ** 2);
 
-        let normX = dx / distance;
-        let normY = dy / distance;
+            let normX = dx / distance;
+            let normY = dy / distance;
 
-        // Move bullet towards mouse position
-        bullet.x += normX * speed;
-        bullet.y += normY * speed;
+            // Move bullet towards mouse position
+            bullet.x += normX * speed;
+            bullet.y += normY * speed;
 
-        // Check for collision with zombies
-        for (let z = zombieList.length - 1; z >= 0; z--) {
-            let zombie = zombieList[z];
-            if (checkCollision(bullet, zombie)) {
-                // Remove bullet and zombie
+            // Check for collision with zombies
+            for (let z = zombieList.length - 1; z >= 0; z--) {
+                let zombie = zombieList[z];
+                if (checkCollision(bullet, zombie)) {
+                    // Remove bullet and zombie
+                    bulletList.splice(b, 1);
+                    zombieList.splice(z, 1);
+
+                    // Increase player score
+                    let player = playerList.find(p => p.id === bullet.id);
+                    if (player) player.score += 1;
+
+                    break;
+                }
+            }
+
+            // Remove bullet if it goes out of canvas
+            if (bullet.x < 0 || bullet.x > 1800 || bullet.y < 0 || bullet.y > 850) {
                 bulletList.splice(b, 1);
-                zombieList.splice(z, 1);
-
-                // Increase player score
-                let player = playerList.find(p => p.id === bullet.id);
-                if (player) player.score += 1;
-
-                break;
             }
         }
-
-        // Remove bullet if it goes out of canvas
-        if (bullet.x < 0 || bullet.x > 1800 || bullet.y < 0 || bullet.y > 850) {
-            bulletList.splice(b, 1);
-        }
     }
-}
 
-//One and only collision function
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.w &&
-        obj1.x + obj1.w > obj2.x &&
-        obj1.y < obj2.y + obj2.h &&
-        obj1.y + obj1.h > obj2.y;
-}
+    //One and only collision function
+    function checkCollision(obj1, obj2) {
+        return obj1.x < obj2.x + obj2.w &&
+            obj1.x + obj1.w > obj2.x &&
+            obj1.y < obj2.y + obj2.h &&
+            obj1.y + obj1.h > obj2.y;
+    }
 
-//Spawn zombie
-setInterval(spawnZombie, Math.random() * 3000 + 1000);
+    //Spawn zombie
+    setInterval(spawnZombie, Math.random() * 3000 + 1000);
 
-//Send updates to clients
-setInterval(() => {
-    io.emit('update', { players: playerList, zombies: zombieList, bullets: bulletList });
-}, 1000 / 60);
+    //Send updates to clients
+    setInterval(() => {
+        io.emit('update', { players: playerList, zombies: zombieList, bullets: bulletList });
+    }, 1000 / 60);
 
-//Update game
-setInterval(updateGame, 1000 / 60);
+    //Update game
+    setInterval(updateGame, 1000 / 60);
 
-function updateGame() {
-    updatePlayerPositions();
-    updateZombie();
-    updateBullet();
-}
+    function updateGame() {
+        updatePlayerPositions();
+        updateZombie();
+        updateBullet();
+    }
 
-//GAME CODE ENDS HERE
+    //GAME CODE ENDS HERE
 
-server.listen(PORT, () => {
-    console.log(`Server started on port:${PORT}`);
-});
+    server.listen(PORT, () => {
+        console.log(`Server started on port:${PORT}`);
+    });
