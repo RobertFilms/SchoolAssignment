@@ -26,7 +26,7 @@ app.get('/print', (req, res) => {
                     if (err) {
                         console.error(err);
                     } else {
-                        console.log('File written successfully');
+                        res.send('File created successfully');
                     }
                 });
             });
