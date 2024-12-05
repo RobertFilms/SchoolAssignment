@@ -1,5 +1,7 @@
 <%- include('partials/header') %>
 <body>
-    <h1 id="welcome">welcome my guy</h1>
+    <% if(typeof viewport !== 'undefined' && viewport === "online") {%>
+        <a href="/print"><button id="button">PRINT</button></a>
+    <%}%>
 </body>
 <%- include('partials/footer') %>

@@ -13,22 +13,24 @@ app.set('views', path.join(__dirname, 'views'));
 
 //app gets
 app.get('/', (req, res) => {
-    res.render('index');
+    res.render('index', { viewport: 'online' });
 });
 
-ejs.renderFile('views/index.ejs', { online: false}, (err, ren) => {
-    console.log(ren);
-    ejs.renderFile('./views/index.ejs', { viewport: 'string' },
-        (err, ren) => {
-            console.log(ren);
-            fs.writeFile('index.html', ren, (err) => {
-                if (err) {
-                    console.error(err);
-                } else {
-                    console.log('File written successfully');
-                }
+app.get('/print', (req, res) => {
+    ejs.renderFile('views/index.ejs', { online: false }, (err, ren) => {
+        console.log(ren);
+        ejs.renderFile('./views/index.ejs', { viewport: 'offline' },
+            (err, ren) => {
+                console.log(ren);
+                fs.writeFile('index.html', ren, (err) => {
+                    if (err) {
+                        console.error(err);
+                    } else {
+                        console.log('File written successfully');
+                    }
+                });
             });
-        });
+    });
 });
 
 //Start server
