@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General</title>
+</head>
+<body>
+    <div id="page-container">
+        <div id="userList"></div>
+        <div id="chat-container"></div>
+            <div id="chat">
+                <div id="chat-messages"></div>
+                <div id="message-container">
+                    <input type="text" id="mess" placeholder="Type your message here" required>
+                    <button type="button" id="send">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        //Create a new Socket.IO connection
+        const socket = io();
+
+        //VARs
+        let tempName = "<%= name %>";
+        let page = 'general';
+        let chat = document.getElementById('chat-messages');
+        let msgBox = document.getElementById('mess');
+        let butt = document.getElementById('send');
+        let userList = document.getElementById('userList');
+
+        //Send message
+        socket.emit('join', { name: tempName, page: page });
+
+        //Listen for 'join' event to update user list
+        socket.on('join', function (data) {
+            userData(data.list);
+        });
+
+        //Listen for 'oldMessages' event to display old messages
+        socket.on('oldMessages', function (messages) {
+            messages.forEach(message => {
+                addMessage(message.poster, message.content, message.time);
+            });
+        });
+
+        //On message
+        socket.on('message', function (data) {
+            //Check if the message contains a 'list' property
+            if (data.hasOwnProperty('list')) {
+                userData(data.list);
+            }
+
+            //Check if the message contains a 'text' property
+            if (data.hasOwnProperty('text')) {
+                addMessage(data.name, data.text, data.time);
+            }
+        });
+
+        socket.on('data', function (data) {
+            userData(data.list);
+        });
+
+        //SUPPER AWESOME SIGMA EVENT LISTENER
+        butt.addEventListener('click', (event) => {
+            let messages = msgBox.value;
+            msgBox.value = '';
+            socket.emit('message', { name: tempName, text: messages, page: page, time: new Date().toLocaleTimeString() });
+        });
+
+        msgBox.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                let messages = msgBox.value;
+                msgBox.value = '';
+                socket.emit('message', { name: tempName, text: messages, page: page, time: new Date().toLocaleTimeString() });
+            }
+        });
+
+        //Functions
+        function addMessage(name, messages, time) {
+            console.log(name, messages, time);
+            let div = document.createElement('div');
+            //Add class to div
+            div.classList.add('message');
+            //Add content to div
+            div.innerHTML = `<span>${name}:</span> ${messages} <span style="float:right; font-size:0.8em; color:#ccc;">${new Date().toLocaleTimeString()}</span>`;
+            chat.appendChild(div);
+            //Scroll to the bottom
+            chat.scrollTop = chat.scrollHeight;
+        };
+    </script>
+</body>
+</html>
