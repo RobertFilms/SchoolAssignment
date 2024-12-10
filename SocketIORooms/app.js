@@ -1,10 +1,12 @@
 const express = require('express');
 const app = express();
 const sql = require('sqlite3').verbose();
+const path = require('path');
 const session = require('express-session');
 const crypto = require('crypto');
 const http = require('http');
 const { Server } = require('socket.io');
+const { time } = require('console');
 
 const PORT = process.env.PORT || 3000;
 
@@ -12,6 +14,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.urlencoded({ extended: true }));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
 app.use(session({
@@ -96,31 +99,30 @@ const db = new sql.Database('data/userData.db', (err) => {
     }
 });
 
-let userList = [];
+server.listen(PORT, () => {
+    console.log(`Server is running on ${PORT}`);
+});
+
+let users = [];
 
 io.on('connection', (socket) => {
     console.log(`User ${socket.id} connected.`);
 
     socket.on('join', (data) => {
-        userList.push({ id: socket.id, name: data.name });
-        io.emit('message', { list: userList.map(user => user.name) });
+        users.push({ name: data.name });
+        io.emit('users', users);
+        io.emit('message', { name: 'Server', text: `${data.name} has joined the chat. Say hello!`, time: new Date().toLocaleTimeString() });
     });
 
     socket.on('data', (data) => {
-        io.emit('message', { text: data });
+        io.emit('message', { text: data.text });
     });
 
     socket.on('message', (data) => {
-        io.emit('message', { name: data.name, text: data.text });
+        io.emit('message', { text: data.text, name: data.name, time: data.time });
     });
 
     socket.on('disconnect', () => {
         console.log(`User ${socket.id} disconnected.`);
-        userList = userList.filter(user => user.id !== socket.id);
-        io.emit('message', { list: userList.map(user => user.name) });
     });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on ${PORT}`);
 });
