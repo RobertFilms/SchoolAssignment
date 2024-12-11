@@ -1,0 +1,74 @@
+
+<footer>
+    <script src="/public/socket.io.js"></script>
+    <script>
+        // Create a new Socket.IO connection
+        const socket = io();
+
+        // Get the user's name
+        const name = '<%- name %>';
+        const room = 'general';
+
+        let chat = document.getElementById('chat-messages');
+        let mess = document.getElementById('mess');
+        let send = document.getElementById('send');
+
+        socket.emit('join', { name: name, room: room });
+
+        // Listen for 'users' event to update user list
+        socket.on('users', function (data) {
+            console.log('Users in chat:', data);
+        });
+
+        // On message
+        socket.on('message', function (data) {
+            addMessage(data.name, data.text, data.time);
+        });
+
+        // SUPPER AWESOME SIGMA EVENT LISTENER
+        send.addEventListener('click', (event) => {
+            event.preventDefault();
+            let messages = mess.value;
+            mess.value = '';
+            // Check message length
+            if (messages.length >= 250) {
+                alert(`Message is too long! Keep it under 250 characters. Your message is ${messages.length} characters long.`);
+                return;
+            } else if (messages.length === 0) {
+                alert(`Message is empty!`);
+                return;
+            }
+            socket.emit('message', { name: name, text: messages, time: new Date().toLocaleTimeString() });
+            socket.emit('command', { name: name, text: messages, time: new Date().toLocaleTimeString() });
+        });
+
+        mess.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                let messages = mess.value;
+                mess.value = '';
+                // Check message length
+                if (messages.length >= 250) {
+                    alert(`Message is too long! Keep it under 250 characters. Your message is ${messages.length} characters long.`);
+                    return;
+                } else if (messages.length === 0) {
+                    alert(`Message is empty!`);
+                    return;
+                }
+                socket.emit('command', { name: name, text: messages, time: new Date().toLocaleTimeString() });
+                socket.emit('message', { name: name, text: messages, time: new Date().toLocaleTimeString() });
+            }
+        });
+
+        // Functions
+        function addMessage(name, message, time) {
+            let div = document.createElement('div');
+            div.classList.add('message');
+            // Escape HTML characters in the message
+            let sanitizedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            div.innerHTML = `<span><strong>${name} in ${room}</strong>:</span> ${sanitizedMessage} <span style="float:right; font-size:0.8em; color:#252e28;"><br>${time}</span>`;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        };
+    </script>
+</footer>

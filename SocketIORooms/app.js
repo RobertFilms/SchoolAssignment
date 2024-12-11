@@ -6,7 +6,9 @@ const session = require('express-session');
 const crypto = require('crypto');
 const http = require('http');
 const { Server } = require('socket.io');
-const { time } = require('console');
+
+const redis = require('redis');
+const client = redis.createClient();
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,6 +17,7 @@ const io = new Server(server);
 
 app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/partials', express.static(path.join(__dirname, 'partials')));
 app.set('view engine', 'ejs');
 
 app.use(session({
@@ -60,7 +63,7 @@ app.post('/login', (req, res) => {
                             if (err) {
                                 res.send('An error occurred:\n' + err);
                             } else {
-                                res.send('new user created');
+                                alert('User created successfully!');
                             }
                         });
                     }
@@ -68,7 +71,7 @@ app.post('/login', (req, res) => {
 
             } else {
                 //Compare your password with provided password
-        
+
                 crypto.pbkdf2(req.body.password, row.salt, 1000, 64, 'sha512', (err, derivedKey) => {
                     if (err) {
                         res.send('An error occurred:\n' + err);
@@ -80,7 +83,7 @@ app.post('/login', (req, res) => {
 
                             res.redirect('/general');
                         } else {
-                            res.send('Invalid username or password');
+                            alert('Invalid username or password');
                         }
                     }
                 });
@@ -106,12 +109,12 @@ server.listen(PORT, () => {
 let users = [];
 
 io.on('connection', (socket) => {
-    console.log(`User ${socket.id} connected.`);
+    console.log(`User connected.`);
 
     socket.on('join', (data) => {
-        users.push({ name: data.name });
+        users.push({ name: data.name, id: socket.id });
         io.emit('users', users);
-        io.emit('message', { name: 'Server', text: `${data.name} has joined the chat. Say hello!`, time: new Date().toLocaleTimeString() });
+        io.emit('message', { name: 'SERVER', text: `${data.name} has joined the chat. Say hello!`, time: new Date().toLocaleTimeString() });
     });
 
     socket.on('data', (data) => {
@@ -122,7 +125,30 @@ io.on('connection', (socket) => {
         io.emit('message', { text: data.text, name: data.name, time: data.time });
     });
 
+    socket.on('command', (data) => {
+        if (data.text.startsWith('/')) {
+            const commandParts = data.text.replace('/', '').split(' ');
+            const command = commandParts[0];
+            const args = commandParts.slice(1);
+
+            if (command === 'users') {
+                socket.emit('message', { text: `Users in chat: ${users.map(user => user.name).join(', ')}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+            } else if (command === 'help') {
+                socket.emit('message', { text: 'Commands: /clear, /help, /users, /join {roomName}', name: 'SERVER', time: new Date().toLocaleTimeString() });
+            } else if (command === 'join' && args.length > 0) {
+                const roomName = args[0];
+                socket.join(roomName);
+                socket.emit('message', { text: `You have joined room: ${roomName}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                io.to(roomName).emit('message', { text: `${data.name} has joined the room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+            } else {
+                socket.emit('message', { text: `Command '${command}' not found. Type /help for a list of commands.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+            }
+            console.log(`User ${data.name} sent a command: '${command}'`);
+        }
+    });
+
     socket.on('disconnect', () => {
-        console.log(`User ${socket.id} disconnected.`);
+        users = users.filter(user => user.id !== socket.id);
+        console.log(`User disconnected.`);
     });
 });
