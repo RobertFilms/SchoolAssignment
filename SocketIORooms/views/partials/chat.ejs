@@ -1,17 +1,17 @@
 <body>
 
-<div id="chat-container">
-    <div id="messages">
-        <% messages.forEach(function(message) { %>
-            <div class="message">
-                <strong><%= message.user %>:</strong> <%= message.text %>
+    <div id="chat-container">
+        <div id="page-container">
+            <div id="userList"></div>
+            <div id="chat-container"></div>
+            <div id="chat-container">
+                <div id="chat">
+                    <div id="chat-messages"></div>
+                    <div id="message-container">
+                    </div>
+                    <div id="message-container">
+                        <input type="text" id="mess" placeholder="Type a message..." />
+                        <button id="send">Send</button>
+                    </div>
+                </div>
             </div>
-        <% }); %>
-    </div>
-    <form id="chat-form">
-        <input id="message-input" type="text" placeholder="Type a message..." autocomplete="off" />
-        <button type="submit">Send</button>
-    </form>
-</div>
-    
-</body>

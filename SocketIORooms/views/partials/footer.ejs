@@ -1,36 +1,48 @@
-
 <footer>
     <script src="/public/socket.io.js"></script>
     <script>
-        // Create a new Socket.IO connection
+        //Create a new Socket.IO connection
         const socket = io();
 
-        // Get the user's name
+        //Get the user's name
         const name = '<%- name %>';
-        const room = 'general';
+        const room = 'chat';
 
         let chat = document.getElementById('chat-messages');
         let mess = document.getElementById('mess');
         let send = document.getElementById('send');
+        let chatList = document.getElementById('userList');
 
         socket.emit('join', { name: name, room: room });
 
-        // Listen for 'users' event to update user list
+        //Listen for 'users' event to update user list
         socket.on('users', function (data) {
             console.log('Users in chat:', data);
         });
 
-        // On message
+        //On message
         socket.on('message', function (data) {
+            if (data.text.startsWith('/')) {
+                return;
+            }
             addMessage(data.name, data.text, data.time);
         });
 
-        // SUPPER AWESOME SIGMA EVENT LISTENER
+        let lastMessageTime = 0;
+        const messageCooldown = 1000;
+
+        //SUPPER AWESOME SIGMA EVENT LISTENER
         send.addEventListener('click', (event) => {
             event.preventDefault();
             let messages = mess.value;
             mess.value = '';
-            // Check message length
+            const currentTime = new Date().getTime();
+            if (currentTime - lastMessageTime < messageCooldown) {
+                alert('You are sending messages too quickly. Please wait a moment.');
+                return;
+            }
+            lastMessageTime = currentTime;
+            //Check message length
             if (messages.length >= 250) {
                 alert(`Message is too long! Keep it under 250 characters. Your message is ${messages.length} characters long.`);
                 return;
@@ -47,7 +59,13 @@
                 event.preventDefault();
                 let messages = mess.value;
                 mess.value = '';
-                // Check message length
+                const currentTime = new Date().getTime();
+                if (currentTime - lastMessageTime < messageCooldown) {
+                    alert('You are sending messages too quickly. Please wait a moment.');
+                    return;
+                }
+                lastMessageTime = currentTime;
+                //Check message length
                 if (messages.length >= 250) {
                     alert(`Message is too long! Keep it under 250 characters. Your message is ${messages.length} characters long.`);
                     return;
@@ -60,15 +78,16 @@
             }
         });
 
-        // Functions
+        //Functions
         function addMessage(name, message, time) {
             let div = document.createElement('div');
             div.classList.add('message');
-            // Escape HTML characters in the message
+            //Escape HTML characters in the message
             let sanitizedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            div.innerHTML = `<span><strong>${name} in ${room}</strong>:</span> ${sanitizedMessage} <span style="float:right; font-size:0.8em; color:#252e28;"><br>${time}</span>`;
+            div.innerHTML = `<span><strong>${name} in ${room}:</strong></span> ${sanitizedMessage} <span style="float:right; font-size:0.8em; color:#252e28;"><br>${time}</span>`;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
         };
     </script>
 </footer>
+</body>

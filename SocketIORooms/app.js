@@ -39,9 +39,9 @@ app.get('/login', (req, res) => {
     res.render('login');
 });
 
-app.get('/general', isAuthed, (req, res) => {
+app.get('/conv', isAuthed, (req, res) => {
     const name = req.session.user;
-    res.render('general', { name });
+    res.render('conv', { name });
 });
 
 app.post('/login', (req, res) => {
@@ -63,7 +63,7 @@ app.post('/login', (req, res) => {
                             if (err) {
                                 res.send('An error occurred:\n' + err);
                             } else {
-                                alert('User created successfully!');
+                                res.send('<script>alert("User created successfully!"); window.location.href = "/login";</script>');
                             }
                         });
                     }
@@ -80,17 +80,16 @@ app.post('/login', (req, res) => {
 
                         if (hashPassword === row.password) {
                             req.session.user = req.body.username;
-
-                            res.redirect('/general');
+                            res.redirect('/conv');
                         } else {
-                            alert('Invalid username or password');
+                            res.send('<script>alert("Invalid username or password"); window.location.href = "/login";</script>');
                         }
                     }
                 });
             }
         });
     } else {
-        res.send('Invalid username or password');
+        res.send('<script>alert("Invalid username or password"); window.location.href = "/login";</script>');
     }
 });
 
@@ -131,17 +130,36 @@ io.on('connection', (socket) => {
             const command = commandParts[0];
             const args = commandParts.slice(1);
 
-            if (command === 'users') {
-                socket.emit('message', { text: `Users in chat: ${users.map(user => user.name).join(', ')}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-            } else if (command === 'help') {
-                socket.emit('message', { text: 'Commands: /clear, /help, /users, /join {roomName}', name: 'SERVER', time: new Date().toLocaleTimeString() });
-            } else if (command === 'join' && args.length > 0) {
-                const roomName = args[0];
-                socket.join(roomName);
-                socket.emit('message', { text: `You have joined room: ${roomName}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                io.to(roomName).emit('message', { text: `${data.name} has joined the room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-            } else {
-                socket.emit('message', { text: `Command '${command}' not found. Type /help for a list of commands.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+            switch (command) {
+                case 'users':
+                    socket.emit('message', { text: `Users in chat: ${users.map(user => user.name).join(', ')}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    break;
+                case 'help':
+                    socket.emit('message', { text: 'Commands: /help, /users, /join, /leave', name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    break;
+                case 'join':
+                    if (args.length > 0) {
+                        const roomName = args[0];
+                        socket.join(roomName);
+                        socket.emit('message', { text: `You have joined room: ${roomName}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                        io.to(roomName).emit('message', { text: `${data.name} has joined the room ${roomName}.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    } else {
+                        socket.emit('message', { text: `Room name is required to join a room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    }
+                    break;
+                case 'leave':
+                    if (args.length > 0) {
+                        const roomName = args[0];
+                        socket.leave(roomName);
+                        socket.emit('message', { text: `You have left room: ${roomName}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                        io.to(roomName).emit('message', { text: `${data.name} has left the room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    } else {
+                        socket.emit('message', { text: `Room name is required to leave a room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    }
+                    break;
+                default:
+                    socket.emit('message', { text: `Command '${command}' not found. Type /help for a list of commands.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
+                    break;
             }
             console.log(`User ${data.name} sent a command: '${command}'`);
         }
