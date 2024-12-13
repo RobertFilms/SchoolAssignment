@@ -40,8 +40,8 @@ app.get('/login', (req, res) => {
 });
 
 app.get('/conv', isAuthed, (req, res) => {
-    const name = req.session.user;
-    res.render('conv', { name });
+    const user = req.session.user;
+    res.render('conv', { user });
 });
 
 app.post('/login', (req, res) => {
@@ -103,70 +103,46 @@ const db = new sql.Database('data/userData.db', (err) => {
 
 server.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
-});
+    let users = [];
 
-let users = [];
+    //Horrendous lookin code
+    io.on('connection', (socket) => {
+        console.log('User connected.');
 
-io.on('connection', (socket) => {
-    console.log(`User connected.`);
+        socket.on('user_connected', (username) => {
+            users.push({ name: username, id: socket.id });
+            io.emit('users', users);
+            console.log(`User ${username} connected.`);
+        });
 
-    socket.on('join', (data) => {
-        users.push({ name: data.name, id: socket.id });
-        io.emit('users', users);
-        io.emit('message', { name: 'SERVER', text: `${data.name} has joined the chat. Say hello!`, time: new Date().toLocaleTimeString() });
-    });
+        socket.on('joinRoom', (data) => {
+            socket.join(data.room);
+            socket.room = data.room;
+            io.to(data.room).emit('message', { user: 'SERVER', message: `${data.user} has joined the room ${data.room}.`, time: new Date().toLocaleTimeString(), room: data.room });
+            console.log(`User ${data.user} joined room ${data.room}.`);
+        });
 
-    socket.on('data', (data) => {
-        io.emit('message', { text: data.text });
-    });
+        socket.on('leaveRoom', (data) => {
+            socket.leave(data.room);
+            io.to(data.room).emit('message', { user: 'SERVER', message: `${data.user} has left the room ${data.room}.`, time: new Date().toLocaleTimeString(), room: data.room });
+            console.log(`User ${data.user} left room ${data.room}.`);
+        });
 
-    socket.on('message', (data) => {
-        io.emit('message', { text: data.text, name: data.name, time: data.time });
-    });
+        socket.on('message', (data) => {
+            io.to(data.room).emit('message', { user: data.user, message: data.message, time: data.time, room: data.room });
+            console.log(`Message from ${data.user} in room ${data.room}: ${data.message}`);
+        });
 
-    socket.on('command', (data) => {
-        if (data.text.startsWith('/')) {
-            const commandParts = data.text.replace('/', '').split(' ');
-            const command = commandParts[0];
-            const args = commandParts.slice(1);
+        socket.on('get_room_users', (data) => {
+            const roomUsers = users.filter(user => io.sockets.sockets.get(user.id).rooms.has(data.room)).map(user => user.name);
+            socket.emit('roomUsers', { room: data.room, users: roomUsers });
+            console.log(`Users in room ${data.room}: ${roomUsers.join(', ')}`);
+        });
 
-            switch (command) {
-                case 'users':
-                    socket.emit('message', { text: `Users in chat: ${users.map(user => user.name).join(', ')}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    break;
-                case 'help':
-                    socket.emit('message', { text: 'Commands: /help, /users, /join, /leave', name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    break;
-                case 'join':
-                    if (args.length > 0) {
-                        const roomName = args[0];
-                        socket.join(roomName);
-                        socket.emit('message', { text: `You have joined room: ${roomName}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                        io.to(roomName).emit('message', { text: `${data.name} has joined the room ${roomName}.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    } else {
-                        socket.emit('message', { text: `Room name is required to join a room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    }
-                    break;
-                case 'leave':
-                    if (args.length > 0) {
-                        const roomName = args[0];
-                        socket.leave(roomName);
-                        socket.emit('message', { text: `You have left room: ${roomName}`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                        io.to(roomName).emit('message', { text: `${data.name} has left the room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    } else {
-                        socket.emit('message', { text: `Room name is required to leave a room.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    }
-                    break;
-                default:
-                    socket.emit('message', { text: `Command '${command}' not found. Type /help for a list of commands.`, name: 'SERVER', time: new Date().toLocaleTimeString() });
-                    break;
-            }
-            console.log(`User ${data.name} sent a command: '${command}'`);
-        }
-    });
-
-    socket.on('disconnect', () => {
-        users = users.filter(user => user.id !== socket.id);
-        console.log(`User disconnected.`);
+        socket.on('disconnect', () => {
+            users = users.filter(user => user.id !== socket.id);
+            io.emit('users', users);
+            console.log('User disconnected.');
+        });
     });
 });
