@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+</head>
+
+<body>
+    <div>
+        <button onclick="window.location.href='/login'">Login</button>
+        <button onClick="takeUser()">Formbar Login</button>
+        <button onclick="window.location.href='/logout'">Logout</button>
+        <button onclick="window.location.href='/chat'">Chat</button>
+    </div>
+</body>
+<script>
+    function takeUser() {
+        const FBJS_URL = 'https://formbar.yorktechapps.com/oAuth';
+        const THIS_URL = 'http://localhost:3000/auth';
+        console.log('takeUser');
+        window.location.href = `/fbLogin?redirectURL=${THIS_URL}`;
+    }
+</script>
+
+</html>
