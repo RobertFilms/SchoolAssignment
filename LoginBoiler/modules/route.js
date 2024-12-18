@@ -22,7 +22,7 @@ function isAuthed(req, res, next) {
 }
 
 const index = (req, res) => {
-    res.render('index');
+    res.render('index', { username: req.session.user });
 }
 const fbLogin = (req, res) => {
     console.log('Token print');
@@ -30,8 +30,6 @@ const fbLogin = (req, res) => {
         let tokenData = jwt.decode(req.query.token);
         req.session.token = tokenData;
         req.session.user = tokenData.username;
-        let checkbox = req.body.checkbox ? 1 : 0;
-        console.log(`Checkbox value: ${checkbox}`);
         let username = req.session.user;
         let id = req.session.token.id;
         try {
@@ -41,7 +39,7 @@ const fbLogin = (req, res) => {
                 } else {
                     if (row) {
                         console.log('update');
-                        db.run('UPDATE fbUsers SET profile_checked = ? WHERE fb_id = ?', [checkbox, id], (err) => {
+                        db.run('UPDATE fbUsers SET fb_name = ? WHERE fb_id = ?', [username, id], (err) => {
                             if (err) {
                                 console.error(err.message);
                             } else {
@@ -51,7 +49,7 @@ const fbLogin = (req, res) => {
                         });
                     } else {
                         console.log('insert');
-                        db.run('INSERT INTO fbUsers (fb_id, fb_name, profile_checked) VALUES (?, ?, ?)', [id, username, checkbox], (err) => {
+                        db.run('INSERT INTO fbUsers (fb_id, fb_name) VALUES (?, ?)', [id, username], (err) => {
                             if (err) {
                                 console.error(err.message);
                             } else {

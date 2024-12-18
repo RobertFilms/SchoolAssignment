@@ -9,6 +9,10 @@
 
 <body>
     <div>
+        <% if (username) { %>
+        <h1>welcome <%= username %></h1>
+        <% } %>
+        
         <button onclick="window.location.href='/login'">Login</button>
         <button onClick="takeUser()">Formbar Login</button>
         <button onclick="window.location.href='/logout'">Logout</button>
