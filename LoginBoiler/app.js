@@ -16,6 +16,7 @@ const server = app.listen(PORT, () => {
 });
 
 const io = require('socket.io')(server);
+const { idkMan } = require('./modules/socket');
 
 //App setup
 app.set('view engine', 'ejs');
@@ -53,3 +54,5 @@ app.post('/login', route.loginPost);
 app.get('/chat', route.isAuthed, route.chat);
 app.get('/logout', route.isAuthed, route.logout);
 app.get('/fbLogin', route.fbLogin);
+
+idkMan(io);

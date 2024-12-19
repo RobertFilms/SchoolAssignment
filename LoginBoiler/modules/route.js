@@ -16,7 +16,10 @@ let db = new sqlite3.Database('data/userData.db', (err) => {
 
 //Routes
 function isAuthed(req, res, next) {
-    if (req.session.user) next();
+    if (req.session.user) {
+        next();
+        return;
+    }
     res.send('<script>alert("You must be logged in to access this page"); window.location.href = "/";</script>');
     return;
 }

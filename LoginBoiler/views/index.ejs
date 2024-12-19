@@ -10,13 +10,19 @@
 <body>
     <div>
         <% if (username) { %>
-        <h1>welcome <%= username %></h1>
-        <% } %>
-        
-        <button onclick="window.location.href='/login'">Login</button>
-        <button onClick="takeUser()">Formbar Login</button>
-        <button onclick="window.location.href='/logout'">Logout</button>
-        <button onclick="window.location.href='/chat'">Chat</button>
+            <h1>welcome <%= username %>
+            </h1>
+            <% } %>
+
+                <% if (!username) { %>
+                    <button onclick="window.location.href='/login'">Login</button>
+                    <button onClick="takeUser()">Formbar Login</button>
+                    <% } %>
+
+                        <% if (username) { %>
+                            <button onclick="window.location.href='/logout'">Logout</button>
+                            <button onclick="window.location.href='/chat'">Chat</button>
+                            <% } %>
     </div>
 </body>
 <script>

@@ -20,7 +20,7 @@
     <script>
         const socket = io();
         
-        const user = username;
+        const user = '<%= username %>';
 
         const chatForm = document.getElementById('chat-form');
         const messageInput = document.getElementById('message-input');
@@ -29,11 +29,24 @@
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const message = messageInput.value;
+            socket.emit('chatMessage', { user, message });
+            messageInput.value = '';
+            console.log(`Sent message: ${message}`);
         });
 
-        socket.on('message', (data) => {
+        socket.emit('join', user);
+
+        socket.on('join', (user) => {
+            console.log(`User ${user} has joined the chat`);
             const messageElement = document.createElement('div');
-            messageElement.textContent = `${data.user}: ${data.message}`;
+            messageElement.innerHTML = `<strong>${user}</strong> has joined the chat`;
+            messages.appendChild(messageElement);
+        });
+
+        socket.on('chatMessage', ({ user, message }) => {
+            const messageElement = document.createElement('div');
+            console.log(`Received message from ${user}: ${message}`);
+            messageElement.innerHTML = `<strong>${user}</strong>: ${message}`;
             messages.appendChild(messageElement);
         });
     </script>
